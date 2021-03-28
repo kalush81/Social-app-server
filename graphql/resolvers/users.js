@@ -1,29 +1,42 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
-const mailformat = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
-const { validateUN } = require('../../utils/validation')
+const {
+  validUserName,
+  validEmail,
+  passwordTooLongOrTooShort,
+} = require("../../utils/validation");
 
 const SECRET = process.env.SECRET;
 
 module.exports = {
   Mutation: {
+    async login(_,{ email, password } ) {
+        //code..
+    },  
     async register(
       parent,
       { registerInput: { username, email, password } },
       context,
       info
     ) {
-      if (!validateUN(username) ) {
-          throw new Error(`name: ${username} doesn't match validation`)
-      } 
+      if (!validUserName(username)) {
+        throw new Error(
+          `name: ${username.substr(0, 20)}... doesn't match validation`
+        );
+      }
+      if (!validEmail(email)) {
+        throw new Error(`${email} is not valid email`);
+      }
+      if (passwordTooLongOrTooShort(password)) {
+        throw new Error(`password length must be between 4 and 30 characters long`);
+      }
+
       const userInDb = await User.findOne({ username });
       const emailInDb = await User.findOne({ email });
-      if ( userInDb || emailInDb ) {
-        throw new Error(`user ${username} exists in our database`);
-      }
-      if (!email.match(mailformat)) {
-        throw new Error(`${email} is not valid email`);
+
+      if (userInDb || emailInDb) {
+        throw new Error(`this user exists in our database`);
       }
       const hash = bcrypt.hashSync(password, 8);
       const newUser = new User({
@@ -33,7 +46,6 @@ module.exports = {
         createdAt: new Date().toISOString,
       });
       const res = await newUser.save();
-      console.log(SECRET);
 
       const token = jwt.sign(
         {
@@ -53,3 +65,7 @@ module.exports = {
     },
   },
 };
+
+
+//TODO: 
+//use GraphQL Error handler to stack all the validation errors
