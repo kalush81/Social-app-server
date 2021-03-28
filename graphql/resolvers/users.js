@@ -1,17 +1,38 @@
-const bcrypt = require('bcryptjs');
-const User = require('../../models/User')
+const bcrypt = require("bcryptjs");
+const jwt = require('jsonwebtoken');
+const User = require("../../models/User");
+
+const SECRET = process.env.SECRET;
 
 module.exports = {
   Mutation: {
-    async register(parent, { registerInput: {username, email, password} }, context, info) {
-      //validate user data
+    async register(
+      parent,
+      { registerInput: { username, email, password } },
+      context,
+      info
+    ) {
       let hash = bcrypt.hashSync(password, 8);
-      console.log('hash', hash);
       const newUser = new User({
-          username, email, password: hash, createdAt: "1200-23-232"
+        username,
+        email,
+        password: hash,
+        createdAt: new Date().toISOString,
       });
-      const res =  await newUser.save();
-      return { ...res._doc, id: res._id, token : 'this is gonna be a token in a future' }
+      const res = await newUser.save();
+      console.log(SECRET)
+
+      const token = jwt.sign({
+          id: res.id,
+          username: res.username,
+          email: res.email
+      }, SECRET, { expiresIn: '1h'})
+      console.log(token)
+      return {
+        ...res._doc,
+        id: res._id,
+        token
+      };
     },
   },
 };
