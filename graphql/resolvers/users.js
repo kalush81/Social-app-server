@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
 const mailformat = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+const { validateUN } = require('../../utils/validation')
 
 const SECRET = process.env.SECRET;
 
@@ -13,6 +14,9 @@ module.exports = {
       context,
       info
     ) {
+      if (!validateUN(username) ) {
+          throw new Error(`name: ${username} doesn't match validation`)
+      } 
       const userInDb = await User.findOne({ username });
       const emailInDb = await User.findOne({ email });
       if ( userInDb || emailInDb ) {
