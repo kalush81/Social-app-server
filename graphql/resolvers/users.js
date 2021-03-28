@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
 const User = require("../../models/User");
+const mailformat = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
 const SECRET = process.env.SECRET;
 
@@ -12,7 +13,14 @@ module.exports = {
       context,
       info
     ) {
-      let hash = bcrypt.hashSync(password, 8);
+      const user = await User.findOne({username})
+      if (user) {
+          throw new Error(`user ${username} exists in our database`)
+      } 
+      if (!email.match(mailformat)) {
+          throw new Error(`${email} is not valid email`)
+      }
+      const hash = bcrypt.hashSync(password, 8);
       const newUser = new User({
         username,
         email,
